@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=sabil_book
+POSTGRES_USER=kHDDYWIDwJXSMxTaMMhkYWFqTNcFKxoM
+POSTGRES_PASSWORD=y866m4wwihg3xY3qURXBLCjXstJ6FOkTtjqMRAYHyCvYebivwPTKJjXKH1p0pIAO

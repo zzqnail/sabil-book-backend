@@ -1,0 +1,73 @@
+volumes:
+  sabil_book_local_postgres_data: {}
+  sabil_book_local_postgres_data_backups: {}
+  sabil_book_local_redis_data: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: sabil_book_local_django
+    container_name: sabil_book_local_django
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - /app/.venv
+      - .:/app:z
+    env_file:
+      - path: ./.envs/.local/.django
+        required: false
+      - path: ./.envs/.local/.postgres
+        required: false
+    ports:
+      - '8000:8000'
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: sabil_book_production_postgres
+    container_name: sabil_book_local_postgres
+    volumes:
+      - sabil_book_local_postgres_data:/var/lib/postgresql/data
+      - sabil_book_local_postgres_data_backups:/backups
+    env_file:
+      - path: ./.envs/.local/.postgres
+        required: false
+
+  redis:
+    image: docker.io/redis:7.2
+    container_name: sabil_book_local_redis
+    volumes:
+      - sabil_book_local_redis_data:/data
+
+  celeryworker:
+    <<: *django
+    image: sabil_book_local_celeryworker
+    container_name: sabil_book_local_celeryworker
+    depends_on:
+      - redis
+      - postgres
+    ports: []
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: sabil_book_local_celerybeat
+    container_name: sabil_book_local_celerybeat
+    depends_on:
+      - redis
+      - postgres
+    ports: []
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    image: sabil_book_local_flower
+    container_name: sabil_book_local_flower
+    ports:
+      - '5555:5555'
+    command: /start-flower
