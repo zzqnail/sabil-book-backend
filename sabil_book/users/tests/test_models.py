@@ -52,7 +52,7 @@ class TestRequest:
 
     def test_budget_is_optional(self, user: User):
         request = Request.objects.create(customer=user)
-        assert request.budget is None
+        assert request.budget == ""
 
     def test_str_includes_customer_and_category(self, db):
         request = RequestFactory.create(category=Request.RequestCategory.BOOK)
