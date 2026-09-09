@@ -26,6 +26,9 @@ class Review(models.Model):
         blank=True,
     )
 
+    def __str__(self) -> str:
+        return f"Review of {self.order} ({self.rating})"
+
 class Dispute(models.Model):
     order = models.ForeignKey(
         Order,
@@ -41,3 +44,6 @@ class Dispute(models.Model):
         _("Dispute resolution"),
         max_length=255,
     )
+
+    def __str__(self) -> str:
+        return f"Dispute on {self.order} ({self.reason})"

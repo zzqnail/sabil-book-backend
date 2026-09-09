@@ -8,15 +8,19 @@ from sabil_book.offers.models import Offer
 from sabil_book.offers.tests.factories import MessageFactory
 from sabil_book.offers.tests.factories import OfferFactory
 from sabil_book.offers.tests.factories import OrderFactory
+from sabil_book.reviews.tests.factories import DisputeFactory
+from sabil_book.reviews.tests.factories import ReviewFactory
 from sabil_book.users.tests.factories import ProviderProfileFactory
 from sabil_book.users.tests.factories import RequestFactory
 from sabil_book.users.tests.factories import UserFactory
+
+DISPUTE_SAMPLE_RATE = 3
 
 
 class Command(BaseCommand):
     help = (
         "Seed the local database with fake users, provider profiles, requests, "
-        "offers, messages, and orders."
+        "offers, messages, orders, reviews, and disputes."
     )
 
     def add_arguments(self, parser):
@@ -58,9 +62,11 @@ class Command(BaseCommand):
             for index in range(n_offers)
         ]
 
-        for offer in offers:
-            if offer.status == Offer.OfferStatus.ACCEPTED:
-                OrderFactory.create(offer=offer)
+        orders = [
+            OrderFactory.create(offer=offer)
+            for offer in offers
+            if offer.status == Offer.OfferStatus.ACCEPTED
+        ]
 
         for index in range(n_messages):
             MessageFactory.create(
@@ -68,10 +74,18 @@ class Command(BaseCommand):
                 sender=requesters[index % len(requesters)],
             )
 
+        for order in orders:
+            ReviewFactory.create(order=order)
+
+        for index, order in enumerate(orders):
+            if index % DISPUTE_SAMPLE_RATE == 0:
+                DisputeFactory.create(order=order)
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seeded {n_customers} customers, {n_providers} providers, "
-                f"{n_requests} requests, {n_offers} offers, and {n_messages} messages "
-                "(with orders for any accepted offers).",
+                f"{n_requests} requests, {n_offers} offers, {n_messages} messages, "
+                f"{len(orders)} orders (from accepted offers), a review per order, "
+                f"and disputes on every {DISPUTE_SAMPLE_RATE}rd order.",
             ),
         )
