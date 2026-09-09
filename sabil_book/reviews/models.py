@@ -30,6 +30,7 @@ class Review(models.Model):
     def __str__(self) -> str:
         return f"Review of {self.order} ({self.rating})"
 
+
 class Dispute(models.Model):
     order = models.ForeignKey(
         Order,

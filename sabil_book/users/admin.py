@@ -51,6 +51,7 @@ class UserAdmin(auth_admin.UserAdmin):
         ),
     )
 
+
 @admin.register(ProviderProfile)
 class ProviderProfileAdmin(admin.ModelAdmin):
     list_display = ["user", "kyc_status", "payout_provider"]
