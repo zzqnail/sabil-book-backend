@@ -103,6 +103,7 @@ LOCAL_APPS = [
     "sabil_book.users",
     "sabil_book.offers",
     "sabil_book.reviews",
+    "sabil_book.payments",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
