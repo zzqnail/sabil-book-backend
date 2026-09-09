@@ -1,8 +1,9 @@
-import uuid 
+import uuid
 from typing import ClassVar
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.db import models 
+from django.db import models
 from django.db.models import CharField
 from django.db.models import EmailField
 from django.urls import reverse
@@ -67,7 +68,7 @@ class ProviderProfile(models.Model):
     payout_provider = models.CharField(
         _("Payout provider"),
         max_length=225,
-        blank=True
+        blank=True,
     )
 
     def __str__(self) -> str:
@@ -88,7 +89,7 @@ class Request(models.Model):
         IN_PROGRESS = "in_progress", _("In Progress")  # a provider accepted it
         FULFILLED = "fulfilled", _("Fulfilled")        # provider delivered it
         CANCELLED = "cancelled", _("Cancelled")        # customer withdrew it
-        EXPIRED = "expired", _("Expired")              # optional: no provider took it in time
+        EXPIRED = "expired", _("Expired")              # no provider took it in time
 
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,

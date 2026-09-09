@@ -1,12 +1,11 @@
 from django.db import models
 
 # Create your models here.
-from django.db import models
-
-from django.db.models import CharField, DecimalField
+from django.db.models import CharField
 from django.utils.translation import gettext_lazy as _
 
 from sabil_book.offers.models import Order
+
 
 class Payment(models.Model):
     class PaymentCurrency(models.TextChoices):
@@ -16,7 +15,7 @@ class Payment(models.Model):
 
     class PaymentStatus(models.TextChoices):
         PENDING = "pending", _("Pending")
-        PROCESSING = "processing", _("Processing")   # sent to payment provider, awaiting confirmation
+        PROCESSING = "processing", _("Processing")  # sent to provider, awaiting result
         SUCCEEDED = "succeeded", _("Succeeded")
         FAILED = "failed", _("Failed")
         REFUNDED = "refunded", _("Refunded")
@@ -54,7 +53,7 @@ class Payment(models.Model):
 class Payout(models.Model):
     class PayoutStatus(models.TextChoices):
         PENDING = "pending", _("Pending")
-        ON_HOLD = "on_hold", _("On Hold")            # e.g. provider's KYC isn't APPROVED yet
+        ON_HOLD = "on_hold", _("On Hold")  # e.g. provider's KYC isn't APPROVED
         PROCESSING = "processing", _("Processing")
         PAID = "paid", _("Paid")
         FAILED = "failed", _("Failed")
@@ -70,7 +69,7 @@ class Payout(models.Model):
         _("Payout Provider"),
         max_length=255,
         blank=False,
-        default=""
+        default="",
     )
     status = CharField(
         _("Payout Status"),

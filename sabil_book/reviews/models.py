@@ -1,12 +1,12 @@
 from django.db import models
 
 # Create your models here.
-from django.db import models
-
-from django.db.models import CharField, DecimalField
+from django.db.models import CharField
+from django.db.models import DecimalField
 from django.utils.translation import gettext_lazy as _
 
 from sabil_book.offers.models import Order
+
 
 class Review(models.Model):
     order = models.ForeignKey(
@@ -19,7 +19,7 @@ class Review(models.Model):
         _("Review Rating"),
         max_digits=2,
         decimal_places=1,
-        default=0
+        default=0,
     )
     body = CharField(
         _("Review Body"),
@@ -40,12 +40,12 @@ class Dispute(models.Model):
     reason = CharField(
         _("Dipute reason"),
         max_length=255,
-        default=""
+        default="",
     )
     resolution = CharField(
         _("Dispute resolution"),
         max_length=255,
-        default=""
+        default="",
     )
 
     def __str__(self) -> str:

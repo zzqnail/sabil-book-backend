@@ -1,11 +1,13 @@
-from django.db import models
-
 # Create your models here.
 from django.conf import settings
 from django.db import models
-from sabil_book.users.models import ProviderProfile, Request
-from django.db.models import CharField, DateTimeField
+from django.db.models import CharField
+from django.db.models import DateTimeField
 from django.utils.translation import gettext_lazy as _
+
+from sabil_book.users.models import ProviderProfile
+from sabil_book.users.models import Request
+
 
 class Offer(models.Model):
     class OfferStatus(models.TextChoices):
@@ -14,7 +16,7 @@ class Offer(models.Model):
         REJECTED = "rejected", _("Rejected")   # customer declined it
         WITHDRAWN = "withdrawn", _("Withdrawn")  # provider pulled it back
         EXPIRED = "expired", _("Expired")   # after validity window
-    
+
     request = models.ForeignKey(
         Request,
         on_delete=models.CASCADE,

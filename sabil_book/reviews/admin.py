@@ -1,10 +1,9 @@
-from django.contrib import admin
-
 from allauth.account.decorators import secure_admin_login
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
+from django.contrib import admin
 
-from .models import Review, Dispute
+from .models import Dispute
+from .models import Review
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
     # Force the `admin` sign in process to go through the `django-allauth` workflow:
