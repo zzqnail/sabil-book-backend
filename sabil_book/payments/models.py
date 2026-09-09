@@ -48,6 +48,9 @@ class Payment(models.Model):
         default=PaymentStatus.PENDING,
     )
 
+    def __str__(self) -> str:
+        return f"Payment for {self.order} ({self.get_status_display()})"
+
 class Payout(models.Model):
     class PayoutStatus(models.TextChoices):
         PENDING = "pending", _("Pending")
@@ -75,3 +78,6 @@ class Payout(models.Model):
         choices=PayoutStatus.choices,
         default=PayoutStatus.PENDING,
     )
+
+    def __str__(self) -> str:
+        return f"Payout for {self.order} ({self.get_status_display()})"

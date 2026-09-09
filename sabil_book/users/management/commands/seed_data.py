@@ -5,9 +5,12 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
 from sabil_book.offers.models import Offer
+from sabil_book.offers.models import Order
 from sabil_book.offers.tests.factories import MessageFactory
 from sabil_book.offers.tests.factories import OfferFactory
 from sabil_book.offers.tests.factories import OrderFactory
+from sabil_book.payments.tests.factories import PaymentFactory
+from sabil_book.payments.tests.factories import PayoutFactory
 from sabil_book.reviews.tests.factories import DisputeFactory
 from sabil_book.reviews.tests.factories import ReviewFactory
 from sabil_book.users.tests.factories import ProviderProfileFactory
@@ -20,7 +23,7 @@ DISPUTE_SAMPLE_RATE = 3
 class Command(BaseCommand):
     help = (
         "Seed the local database with fake users, provider profiles, requests, "
-        "offers, messages, orders, reviews, and disputes."
+        "offers, messages, orders, reviews, disputes, payments, and payouts."
     )
 
     def add_arguments(self, parser):
@@ -76,16 +79,24 @@ class Command(BaseCommand):
 
         for order in orders:
             ReviewFactory.create(order=order)
+            PaymentFactory.create(order=order)
 
         for index, order in enumerate(orders):
             if index % DISPUTE_SAMPLE_RATE == 0:
                 DisputeFactory.create(order=order)
 
+        payouts = [
+            PayoutFactory.create(order=order)
+            for order in orders
+            if order.status == Order.OrderStatus.CONFIRMED
+        ]
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seeded {n_customers} customers, {n_providers} providers, "
                 f"{n_requests} requests, {n_offers} offers, {n_messages} messages, "
-                f"{len(orders)} orders (from accepted offers), a review per order, "
-                f"and disputes on every {DISPUTE_SAMPLE_RATE}rd order.",
+                f"{len(orders)} orders (from accepted offers), a review and payment "
+                f"per order, disputes on every {DISPUTE_SAMPLE_RATE}rd order, and "
+                f"{len(payouts)} payouts for confirmed orders.",
             ),
         )

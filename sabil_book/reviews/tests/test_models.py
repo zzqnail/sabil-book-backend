@@ -3,7 +3,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError
 
 from sabil_book.offers.tests.factories import OrderFactory
 from sabil_book.reviews.models import Dispute
@@ -22,10 +21,10 @@ class TestReview:
         review = Review.objects.create(order=order, rating=Decimal("3.0"))
         assert review.body == ""
 
-    def test_rating_is_required(self, db):
+    def test_rating_defaults_to_zero(self, db):
         order = OrderFactory.create()
-        with pytest.raises(IntegrityError):
-            Review.objects.create(order=order)
+        review = Review.objects.create(order=order)
+        assert review.rating == Decimal("0")
 
     def test_rating_stores_one_decimal_place(self, db):
         review = ReviewFactory.create(rating=Decimal("4.5"))
@@ -53,6 +52,11 @@ class TestDispute:
         order = OrderFactory.create()
         dispute = Dispute.objects.create(order=order, reason="item not delivered")
         assert dispute.resolution == ""
+
+    def test_reason_defaults_to_empty_string(self, db):
+        order = OrderFactory.create()
+        dispute = Dispute.objects.create(order=order)
+        assert dispute.reason == ""
 
     def test_deleted_when_order_is_deleted(self, db):
         dispute = DisputeFactory.create()
