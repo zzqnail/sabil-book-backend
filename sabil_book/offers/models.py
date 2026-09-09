@@ -83,6 +83,7 @@ class Order(models.Model):
         verbose_name=_("offer"),
     )
     status = models.CharField(
+        _("status"),
         max_length=25,
         choices=OrderStatus.choices,
         default=OrderStatus.FUNDED,
@@ -91,3 +92,24 @@ class Order(models.Model):
 
     def __str__(self) -> str:
         return f"Order for {self.offer} ({self.get_status_display()})"
+
+class Attachment(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="attachment",
+        verbose_name=_("order"),
+    )
+    file_hash = CharField(
+        _("Attached file hash"),
+        max_length=255,
+        blank=True,
+    )
+    storage_key=CharField(
+        _("Attached file key"),
+        max_length=255,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"Attached file for {self.order} - {self.storage_key}"

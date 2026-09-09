@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import admin as auth_admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import Offer,Order
+from .models import Offer, Order, Attachment
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
     # Force the `admin` sign in process to go through the `django-allauth` workflow:
@@ -24,3 +24,9 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ["offer", "status", "funded_at"]
     list_filter = ["status"]
     search_fields = ["offer"]
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ["order"]
+    list_filter = ["order"]
+    search_fields = ["order"]

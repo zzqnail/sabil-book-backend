@@ -19,6 +19,7 @@ class Review(models.Model):
         _("Review Rating"),
         max_digits=2,
         decimal_places=1,
+        default=0
     )
     body = CharField(
         _("Review Body"),
@@ -39,10 +40,12 @@ class Dispute(models.Model):
     reason = CharField(
         _("Dipute reason"),
         max_length=255,
+        default=""
     )
     resolution = CharField(
         _("Dispute resolution"),
         max_length=255,
+        default=""
     )
 
     def __str__(self) -> str:
