@@ -11,11 +11,11 @@ from sabil_book.users.models import Request
 
 class Offer(models.Model):
     class OfferStatus(models.TextChoices):
-        PENDING = "pending", _("Pending")      # submitted, awaiting customer decision
-        ACCEPTED = "accepted", _("Accepted")   # customer picked this one
-        REJECTED = "rejected", _("Rejected")   # customer declined it
+        PENDING = "pending", _("Pending")  # submitted, awaiting customer decision
+        ACCEPTED = "accepted", _("Accepted")  # customer picked this one
+        REJECTED = "rejected", _("Rejected")  # customer declined it
         WITHDRAWN = "withdrawn", _("Withdrawn")  # provider pulled it back
-        EXPIRED = "expired", _("Expired")   # after validity window
+        EXPIRED = "expired", _("Expired")  # after validity window
 
     request = models.ForeignKey(
         Request,
@@ -44,6 +44,7 @@ class Offer(models.Model):
     def __str__(self) -> str:
         return f"{self.provider} on {self.request} ({self.get_status_display()})"
 
+
 class Message(models.Model):
     offer = models.ForeignKey(
         Offer,
@@ -67,6 +68,7 @@ class Message(models.Model):
     def __str__(self) -> str:
         return f"{self.sender}: {self.body[:30]}"
 
+
 class Order(models.Model):
     class OrderStatus(models.TextChoices):
         FUNDED = "funded", _("Funded")
@@ -76,7 +78,6 @@ class Order(models.Model):
         DISPUTE = "dispute", _("Dispute")
         UNRESOLVED = "unresolved", _("Unresolved")
         REVERTED = "reverted", _("Reverted")
-
 
     offer = models.ForeignKey(
         Offer,
@@ -95,6 +96,7 @@ class Order(models.Model):
     def __str__(self) -> str:
         return f"Order for {self.offer} ({self.get_status_display()})"
 
+
 class Attachment(models.Model):
     order = models.ForeignKey(
         Order,
@@ -107,7 +109,7 @@ class Attachment(models.Model):
         max_length=255,
         blank=True,
     )
-    storage_key=CharField(
+    storage_key = CharField(
         _("Attached file key"),
         max_length=255,
         blank=True,

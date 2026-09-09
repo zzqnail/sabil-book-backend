@@ -12,17 +12,20 @@ if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
     admin.autodiscover()
     admin.site.login = secure_admin_login(admin.site.login)  # type: ignore[method-assign]
 
+
 @admin.register(Offer)
 class OfferAdmin(admin.ModelAdmin):
     list_display = ["request", "provider", "status", "price"]
     list_filter = ["status"]
     search_fields = ["provider", "request"]
 
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ["offer", "status", "funded_at"]
     list_filter = ["status"]
     search_fields = ["offer"]
+
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):

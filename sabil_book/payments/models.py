@@ -50,6 +50,7 @@ class Payment(models.Model):
     def __str__(self) -> str:
         return f"Payment for {self.order} ({self.get_status_display()})"
 
+
 class Payout(models.Model):
     class PayoutStatus(models.TextChoices):
         PENDING = "pending", _("Pending")

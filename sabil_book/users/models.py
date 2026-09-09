@@ -46,6 +46,7 @@ class User(AbstractUser):
         """
         return reverse("users:detail", kwargs={"pk": self.id})
 
+
 class ProviderProfile(models.Model):
     class KYCStatus(models.TextChoices):
         NOT_SUBMITTED = "not_submitted", _("Not Submitted")
@@ -74,6 +75,7 @@ class ProviderProfile(models.Model):
     def __str__(self) -> str:
         return f"{self.user} ({self.get_kyc_status_display()})"
 
+
 class Request(models.Model):
     class RequestCategory(models.TextChoices):
         DOCUMENT = "document", _("Document")
@@ -84,12 +86,12 @@ class Request(models.Model):
         OTHER = "other", _("Other")
 
     class RequestStatus(models.TextChoices):
-        DRAFT = "draft", _("Draft")           # customer is still filling it in
-        OPEN = "open", _("Open")              # published, visible to providers
+        DRAFT = "draft", _("Draft")  # customer is still filling it in
+        OPEN = "open", _("Open")  # published, visible to providers
         IN_PROGRESS = "in_progress", _("In Progress")  # a provider accepted it
-        FULFILLED = "fulfilled", _("Fulfilled")        # provider delivered it
-        CANCELLED = "cancelled", _("Cancelled")        # customer withdrew it
-        EXPIRED = "expired", _("Expired")              # no provider took it in time
+        FULFILLED = "fulfilled", _("Fulfilled")  # provider delivered it
+        CANCELLED = "cancelled", _("Cancelled")  # customer withdrew it
+        EXPIRED = "expired", _("Expired")  # no provider took it in time
 
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
