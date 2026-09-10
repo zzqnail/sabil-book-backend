@@ -1,52 +1,77 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView
-from django.views.generic import RedirectView
-from django.views.generic import UpdateView
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView
+from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.mixins import UpdateModelMixin
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from sabil_book.users.models import User
-
-if TYPE_CHECKING:
-    from django.db.models import QuerySet
-
-
-class UserDetailView(LoginRequiredMixin, DetailView):
-    model = User
-    slug_field = "id"
-    slug_url_kwarg = "id"
+from sabil_book.users.serializers import RegisterSerializer
+from sabil_book.users.serializers import UserSerializer
 
 
-user_detail_view = UserDetailView.as_view()
+class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    lookup_field = "pk"
+
+    def get_queryset(self, *args, **kwargs):
+        assert isinstance(self.request.user.id, int)
+        return self.queryset.filter(id=self.request.user.id)
+
+    @action(detail=False)
+    def me(self, request):
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
 
 
-class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
-    model = User
-    fields = ["name"]
-    success_message = _("Information successfully updated")
+class RegisterView(CreateAPIView):
+    """Register a new user and return it together with a JWT token pair."""
 
-    def get_success_url(self) -> str:
-        assert self.request.user.is_authenticated  # type guard
-        return self.request.user.get_absolute_url()
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+    queryset = User.objects.all()
 
-    def get_object(self, queryset: QuerySet | None = None) -> User:
-        assert self.request.user.is_authenticated  # type guard
-        return self.request.user
-
-
-user_update_view = UserUpdateView.as_view()
-
-
-class UserRedirectView(LoginRequiredMixin, RedirectView):
-    permanent = False
-
-    def get_redirect_url(self) -> str:
-        return reverse("users:detail", kwargs={"pk": self.request.user.pk})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        data = {
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
-user_redirect_view = UserRedirectView.as_view()
+class LogoutView(APIView):
+    """Blacklist the given refresh token, effectively logging the user out."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            raise ValidationError({"refresh": "This field is required."})
+        try:
+            RefreshToken(refresh_token).blacklist()
+        except TokenError as exc:
+            raise ValidationError({"refresh": str(exc)}) from exc
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class CurrentUserView(APIView):
+    """Return the currently authenticated user."""
+
+    def get(self, request, *args, **kwargs):
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(status=status.HTTP_200_OK, data=serializer.data)

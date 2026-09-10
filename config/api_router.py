@@ -2,7 +2,7 @@ from django.conf import settings
 from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 
-from sabil_book.users.api.views import UserViewSet
+from sabil_book.users.views import UserViewSet
 
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 from rest_framework.test import APIRequestFactory
 
-from sabil_book.users.api.views import UserViewSet
+from sabil_book.users.views import UserViewSet
 
 if TYPE_CHECKING:
     from sabil_book.users.models import User
