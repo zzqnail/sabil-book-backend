@@ -16,7 +16,7 @@ from sabil_book.users.tests.factories import UserFactory
 class OfferFactory(DjangoModelFactory[Offer]):
     request = factory.SubFactory(RequestFactory)
     provider = factory.SubFactory(ProviderProfileFactory)
-    price = Faker("numerify", text="###")
+    price = fuzzy.FuzzyDecimal(10, 500, precision=2)
     status = fuzzy.FuzzyChoice(Offer.OfferStatus.values)
 
     class Meta:

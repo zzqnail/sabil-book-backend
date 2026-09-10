@@ -54,7 +54,7 @@ class ProviderProfile(models.Model):
         APPROVED = "approved", _("Approved")
         REJECTED = "rejected", _("Rejected")
 
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="provider_profile",
@@ -105,11 +105,12 @@ class Request(models.Model):
         choices=RequestCategory.choices,
         default=RequestCategory.OTHER,
     )
-    budget = models.CharField(
+    budget = models.DecimalField(
         _("Request Budget"),
-        max_length=255,
+        max_digits=10,
+        decimal_places=2,
+        null=True,
         blank=True,
-        default="",
     )
     status = models.CharField(
         _("Request Status"),

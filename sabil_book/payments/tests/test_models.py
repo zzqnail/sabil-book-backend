@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pytest
+from django.db import IntegrityError
+from django.db import transaction
 
 from sabil_book.offers.tests.factories import OrderFactory
 from sabil_book.payments.models import Payment
@@ -12,10 +16,23 @@ from sabil_book.payments.tests.factories import PayoutFactory
 class TestPayment:
     def test_defaults(self, db):
         order = OrderFactory.create()
-        payment = Payment.objects.create(order=order)
-        assert payment.provider == ""
+        payment = Payment.objects.create(
+            order=order,
+            amount=Decimal("100.00"),
+            provider="Stripe",
+        )
         assert payment.currency == Payment.PaymentCurrency.QAR
         assert payment.status == Payment.PaymentStatus.PENDING
+
+    def test_amount_is_required(self, db):
+        order = OrderFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Payment.objects.create(order=order, provider="Stripe")
+
+    def test_provider_cannot_be_blank(self, db):
+        order = OrderFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Payment.objects.create(order=order, amount=Decimal("100.00"), provider="")
 
     def test_str_includes_order_and_status(self, db):
         payment = PaymentFactory.create(status=Payment.PaymentStatus.SUCCEEDED)
@@ -30,15 +47,29 @@ class TestPayment:
         payment_count = 2
         order = OrderFactory.create()
         PaymentFactory.create_batch(payment_count, order=order)
-        assert order.payment.count() == payment_count
+        assert order.payments.count() == payment_count
 
 
 class TestPayout:
     def test_defaults(self, db):
         order = OrderFactory.create()
-        payout = Payout.objects.create(order=order)
-        assert payout.provider == ""
+        payout = Payout.objects.create(
+            order=order,
+            amount=Decimal("100.00"),
+            provider="Stripe",
+        )
+        assert payout.currency == Payment.PaymentCurrency.QAR
         assert payout.status == Payout.PayoutStatus.PENDING
+
+    def test_amount_is_required(self, db):
+        order = OrderFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Payout.objects.create(order=order, provider="Stripe")
+
+    def test_provider_cannot_be_blank(self, db):
+        order = OrderFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Payout.objects.create(order=order, amount=Decimal("100.00"), provider="")
 
     def test_str_includes_order_and_status(self, db):
         payout = PayoutFactory.create(status=Payout.PayoutStatus.ON_HOLD)
@@ -53,7 +84,7 @@ class TestPayout:
         payout_count = 2
         order = OrderFactory.create()
         PayoutFactory.create_batch(payout_count, order=order)
-        assert order.payout.count() == payout_count
+        assert order.payouts.count() == payout_count
 
 
 @pytest.mark.django_db

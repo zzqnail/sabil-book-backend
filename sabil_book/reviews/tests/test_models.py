@@ -3,12 +3,15 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+from django.db import IntegrityError
+from django.db import transaction
 
 from sabil_book.offers.tests.factories import OrderFactory
 from sabil_book.reviews.models import Dispute
 from sabil_book.reviews.models import Review
 from sabil_book.reviews.tests.factories import DisputeFactory
 from sabil_book.reviews.tests.factories import ReviewFactory
+from sabil_book.users.tests.factories import UserFactory
 
 
 class TestReview:
@@ -18,13 +21,43 @@ class TestReview:
 
     def test_body_is_optional(self, db):
         order = OrderFactory.create()
-        review = Review.objects.create(order=order, rating=Decimal("3.0"))
+        author = UserFactory.create()
+        review = Review.objects.create(
+            order=order,
+            author=author,
+            rating=Decimal("3.0"),
+        )
         assert review.body == ""
 
-    def test_rating_defaults_to_zero(self, db):
+    def test_rating_is_required(self, db):
         order = OrderFactory.create()
-        review = Review.objects.create(order=order)
-        assert review.rating == Decimal("0")
+        author = UserFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Review.objects.create(order=order, author=author)
+
+    def test_rating_below_one_is_rejected(self, db):
+        order = OrderFactory.create()
+        author = UserFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Review.objects.create(order=order, author=author, rating=Decimal("0.5"))
+
+    def test_rating_above_five_is_rejected(self, db):
+        order = OrderFactory.create()
+        author = UserFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Review.objects.create(order=order, author=author, rating=Decimal("5.5"))
+
+    def test_author_is_required(self, db):
+        order = OrderFactory.create()
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Review.objects.create(order=order, rating=Decimal("3.0"))
+
+    def test_author_cannot_review_the_same_order_twice(self, db):
+        order = OrderFactory.create()
+        author = UserFactory.create()
+        Review.objects.create(order=order, author=author, rating=Decimal("3.0"))
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Review.objects.create(order=order, author=author, rating=Decimal("4.0"))
 
     def test_rating_stores_one_decimal_place(self, db):
         review = ReviewFactory.create(rating=Decimal("4.5"))
@@ -40,7 +73,7 @@ class TestReview:
         review_count = 2
         order = OrderFactory.create()
         ReviewFactory.create_batch(review_count, order=order)
-        assert order.review.count() == review_count
+        assert order.reviews.count() == review_count
 
 
 class TestDispute:
@@ -63,11 +96,11 @@ class TestDispute:
         dispute.order.delete()
         assert not Dispute.objects.filter(pk=dispute.pk).exists()
 
-    def test_order_can_have_multiple_disputes(self, db):
-        dispute_count = 2
+    def test_order_can_only_have_one_dispute(self, db):
         order = OrderFactory.create()
-        DisputeFactory.create_batch(dispute_count, order=order)
-        assert order.dispute.count() == dispute_count
+        DisputeFactory.create(order=order)
+        with pytest.raises(IntegrityError), transaction.atomic():
+            DisputeFactory.create(order=order)
 
 
 @pytest.mark.django_db
