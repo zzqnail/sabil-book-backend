@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 def backfill_user_uuid(apps, schema_editor):
     User = apps.get_model('users', 'User')
-    for user in User.objects.filter(uuid__isnull=True).iterator():
+    for user in User.objects.all().iterator():
         user.uuid = uuid.uuid4()
         user.save(update_fields=['uuid'])
 
