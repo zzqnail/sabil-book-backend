@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import CharField
 from django.db.models import DateTimeField
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from sabil_book.users.models import ProviderProfile
@@ -20,18 +21,19 @@ class Offer(models.Model):
     request = models.ForeignKey(
         Request,
         on_delete=models.CASCADE,
-        related_name="offer",
+        related_name="offers",
         verbose_name=_("request"),
     )
     provider = models.ForeignKey(
         ProviderProfile,
         on_delete=models.CASCADE,
-        related_name="offer",
+        related_name="offers",
         verbose_name=_("provider"),
     )
-    price = CharField(
+    price = models.DecimalField(
         _("Offering Price"),
-        max_length=20,
+        max_digits=10,
+        decimal_places=2,
         default=0,
     )
     status = CharField(
@@ -41,6 +43,17 @@ class Offer(models.Model):
         default=OfferStatus.PENDING,
     )
 
+    class Meta:
+        constraints = [
+            # A provider may only have one active (pending/accepted) offer per
+            # request. To change an offer, withdraw it first and submit a new one.
+            models.UniqueConstraint(
+                fields=["request", "provider"],
+                condition=Q(status__in=["pending", "accepted"]),
+                name="unique_active_offer_per_provider_per_request",
+            ),
+        ]
+
     def __str__(self) -> str:
         return f"{self.provider} on {self.request} ({self.get_status_display()})"
 
@@ -49,14 +62,14 @@ class Message(models.Model):
     offer = models.ForeignKey(
         Offer,
         on_delete=models.CASCADE,
-        related_name="message",
+        related_name="messages",
         verbose_name=_("offer"),
     )
 
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="user",
+        related_name="sent_messages",
         verbose_name=_("sender"),
     )
     body = models.CharField(
@@ -72,14 +85,17 @@ class Message(models.Model):
 class Order(models.Model):
     class OrderStatus(models.TextChoices):
         FUNDED = "funded", _("Funded")
-        SENT = "sent", _("Sent")
+        SENT = "sent", _("Sent")  # provider marked the work delivered
+        # reached either from SENT with no dispute, or from DISPUTE resolved
+        # in the provider's favor (payout issued)
         CONFIRMED = "confirmed", _("Confirmed")
-        APPEAL = "appeal", _("Appeal")
-        DISPUTE = "dispute", _("Dispute")
-        UNRESOLVED = "unresolved", _("Unresolved")
+        APPEAL = "appeal", _("Appeal")  # unrelated to the dispute flow below
+        DISPUTE = "dispute", _("Dispute")  # a dispute is in progress
+        UNRESOLVED = "unresolved", _("Unresolved")  # dispute ended with no resolution
+        # dispute resolved in the customer's favor, payment returned
         REVERTED = "reverted", _("Reverted")
 
-    offer = models.ForeignKey(
+    offer = models.OneToOneField(
         Offer,
         on_delete=models.CASCADE,
         related_name="order",
@@ -91,17 +107,17 @@ class Order(models.Model):
         choices=OrderStatus.choices,
         default=OrderStatus.FUNDED,
     )
-    funded_at = DateTimeField(auto_now_add=True)
+    funded_at = DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
-        return f"Order for {self.offer} ({self.get_status_display()})"
+        return f"Order #{self.pk} ({self.get_status_display()})"
 
 
 class Attachment(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name="attachment",
+        related_name="attachments",
         verbose_name=_("order"),
     )
     file_hash = CharField(

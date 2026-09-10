@@ -12,7 +12,7 @@ from sabil_book.users.models import User
 
 
 class UserFactory(DjangoModelFactory[User]):
-    email = Faker("email")
+    email = factory.Sequence(lambda n: f"user{n}@example.com")
     name = Faker("name")
 
     @post_generation
@@ -35,7 +35,6 @@ class UserFactory(DjangoModelFactory[User]):
 
     class Meta:
         model = User
-        django_get_or_create = ["email"]
         skip_postgeneration_save = True
 
 
@@ -51,7 +50,7 @@ class ProviderProfileFactory(DjangoModelFactory[ProviderProfile]):
 class RequestFactory(DjangoModelFactory[Request]):
     customer = factory.SubFactory(UserFactory)
     category = fuzzy.FuzzyChoice(Request.RequestCategory.values)
-    budget = Faker("numerify", text="###")
+    budget = fuzzy.FuzzyDecimal(10, 500, precision=2)
 
     class Meta:
         model = Request

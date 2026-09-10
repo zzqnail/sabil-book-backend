@@ -8,10 +8,12 @@ from factory.django import DjangoModelFactory
 from sabil_book.offers.tests.factories import OrderFactory
 from sabil_book.reviews.models import Dispute
 from sabil_book.reviews.models import Review
+from sabil_book.users.tests.factories import UserFactory
 
 
 class ReviewFactory(DjangoModelFactory[Review]):
     order = factory.SubFactory(OrderFactory)
+    author = factory.SubFactory(UserFactory)
     rating = fuzzy.FuzzyDecimal(1.0, 5.0, precision=1)
     body = Faker("sentence")
 

@@ -6,6 +6,13 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def backfill_user_uuid(apps, schema_editor):
+    User = apps.get_model('users', 'User')
+    for user in User.objects.all().iterator():
+        user.uuid = uuid.uuid4()
+        user.save(update_fields=['uuid'])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -19,6 +26,12 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, max_length=255, verbose_name='User location'),
         ),
         migrations.AddField(
+            model_name='user',
+            name='uuid',
+            field=models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, null=True, unique=False),
+        ),
+        migrations.RunPython(backfill_user_uuid, migrations.RunPython.noop),
+        migrations.AlterField(
             model_name='user',
             name='uuid',
             field=models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, unique=True),

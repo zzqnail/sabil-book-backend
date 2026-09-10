@@ -12,6 +12,7 @@ from sabil_book.payments.models import Payout
 
 class PaymentFactory(DjangoModelFactory[Payment]):
     order = factory.SubFactory(OrderFactory)
+    amount = fuzzy.FuzzyDecimal(10, 500, precision=2)
     provider = Faker("company")
     currency = fuzzy.FuzzyChoice(Payment.PaymentCurrency.values)
     status = fuzzy.FuzzyChoice(Payment.PaymentStatus.values)
@@ -22,6 +23,8 @@ class PaymentFactory(DjangoModelFactory[Payment]):
 
 class PayoutFactory(DjangoModelFactory[Payout]):
     order = factory.SubFactory(OrderFactory)
+    amount = fuzzy.FuzzyDecimal(10, 500, precision=2)
+    currency = fuzzy.FuzzyChoice(Payment.PaymentCurrency.values)
     provider = Faker("company")
     status = fuzzy.FuzzyChoice(Payout.PayoutStatus.values)
 

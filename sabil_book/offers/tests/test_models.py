@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pytest
+from django.utils import timezone
 
 from sabil_book.offers.models import Message
 from sabil_book.offers.models import Offer
@@ -29,7 +31,7 @@ class TestOffer:
         provider = ProviderProfileFactory.create()
         offer = Offer.objects.create(request=request, provider=provider)
         offer.refresh_from_db()
-        assert offer.price == "0"
+        assert offer.price == Decimal("0.00")
 
     def test_str_includes_provider_request_and_status(self, db):
         offer = OfferFactory.create(status=Offer.OfferStatus.ACCEPTED)
@@ -49,7 +51,7 @@ class TestOffer:
         offer_count = 3
         request = RequestFactory.create()
         OfferFactory.create_batch(offer_count, request=request)
-        assert request.offer.count() == offer_count
+        assert request.offers.count() == offer_count
 
 
 class TestMessage:
@@ -78,14 +80,21 @@ class TestOrder:
         order = Order.objects.create(offer=offer)
         assert order.status == Order.OrderStatus.FUNDED
 
-    def test_funded_at_is_set_on_create(self, db):
+    def test_funded_at_defaults_to_none(self, db):
         offer = OfferFactory.create()
         order = Order.objects.create(offer=offer)
-        assert order.funded_at is not None
+        assert order.funded_at is None
 
-    def test_str_includes_offer_and_status(self, db):
+    def test_funded_at_can_be_set_explicitly(self, db):
+        offer = OfferFactory.create()
+        funded_at = timezone.now()
+        order = Order.objects.create(offer=offer, funded_at=funded_at)
+        order.refresh_from_db()
+        assert order.funded_at == funded_at
+
+    def test_str_is_cheap_and_shows_pk_and_status(self, db):
         order = OrderFactory.create(status=Order.OrderStatus.DISPUTE)
-        assert str(order) == f"Order for {order.offer} (Dispute)"
+        assert str(order) == f"Order #{order.pk} (Dispute)"
 
     def test_deleted_when_offer_is_deleted(self, db):
         order = OrderFactory.create()
