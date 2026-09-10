@@ -16,11 +16,10 @@ if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ["order", "rating"]
     list_filter = ["rating"]
-    search_fields = ["order", "body"]
+    search_fields = ["body"]
 
 
 @admin.register(Dispute)
 class DisputeAdmin(admin.ModelAdmin):
     list_display = ["order"]
     list_filter = ["order"]
-    search_fields = ["order"]

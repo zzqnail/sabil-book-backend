@@ -8,11 +8,11 @@ from .models import Payout
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ["order", "provider", "currency", "status"]
     list_filter = ["status", "currency"]
-    search_fields = ["order", "provider"]
+    search_fields = ["provider"]
 
 
 @admin.register(Payout)
 class PayoutAdmin(admin.ModelAdmin):
     list_display = ["order", "provider", "status"]
     list_filter = ["status"]
-    search_fields = ["order", "provider"]
+    search_fields = ["provider"]
