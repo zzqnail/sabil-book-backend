@@ -384,5 +384,11 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/",
 }
+
+# KYC/AML provider webhook (stub integration point)
+# -------------------------------------------------------------------------------
+# Shared secret the KYC provider must send back in the X-Webhook-Secret header.
+# Left empty by default, which makes the webhook reject every call.
+KYC_WEBHOOK_SECRET = env("KYC_WEBHOOK_SECRET", default="")
 # Your stuff...
 # ------------------------------------------------------------------------------

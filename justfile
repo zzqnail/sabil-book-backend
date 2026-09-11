@@ -33,6 +33,10 @@ prune *args:
 logs *args:
     @docker compose logs -f {{args}}
 
+# ps: View container state
+ps:
+    @docker compose ps
+
 # manage: Executes `manage.py` command.
 manage +args:
     @docker compose run --rm django python ./manage.py {{args}}

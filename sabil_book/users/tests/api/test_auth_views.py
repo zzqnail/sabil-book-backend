@@ -28,8 +28,8 @@ class TestRegisterView:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert "access" in response.data
-        assert "refresh" in response.data
+        assert "authToken" in response.data
+        assert "refreshToken" in response.data
         assert response.data["user"]["name"] == "New User"
 
         user = User.objects.get(email="new-user@example.com")

@@ -50,6 +50,7 @@ class ProviderProfile(models.Model):
         related_name="provider_profile",
         verbose_name=_("user"),
     )
+    country = CharField(_("Provider country"), blank=True, max_length=255)
     kyc_status = models.CharField(
         _("KYC status"),
         max_length=20,

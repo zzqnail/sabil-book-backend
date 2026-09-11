@@ -5,3 +5,8 @@ POSTGRES_PORT=5432
 POSTGRES_DB=sabil_book
 POSTGRES_USER=kHDDYWIDwJXSMxTaMMhkYWFqTNcFKxoM
 POSTGRES_PASSWORD=y866m4wwihg3xY3qURXBLCjXstJ6FOkTtjqMRAYHyCvYebivwPTKJjXKH1p0pIAO
+# Postgres 18+ images default PGDATA to /var/lib/postgresql/<major>/docker and
+# refuse to start if something is mounted at the legacy /var/lib/postgresql/data
+# path without being told to use it. Pin PGDATA explicitly since the compose
+# volume is mounted at that legacy path.
+PGDATA=/var/lib/postgresql/data
