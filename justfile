@@ -44,3 +44,7 @@ manage +args:
 # pytest: Run tests with pytest.
 pytest *args:
     @docker compose run --rm django pytest {{args}}
+
+#lint: Run linting check.
+lint:
+    .venv/bin/pre-commit run --all-files
