@@ -7,7 +7,6 @@ from django.utils.translation import gettext_lazy as _
 from .forms import UserAdminChangeForm
 from .forms import UserAdminCreationForm
 from .models import ProviderProfile
-from .models import Request
 from .models import User
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
@@ -57,10 +56,3 @@ class ProviderProfileAdmin(admin.ModelAdmin):
     list_display = ["user", "kyc_status", "payout_provider"]
     list_filter = ["kyc_status"]
     search_fields = ["user__email", "user__name"]
-
-
-@admin.register(Request)
-class RequestAdmin(admin.ModelAdmin):
-    list_display = ["customer", "category", "budget", "status"]
-    list_filter = ["category"]
-    search_fields = ["customer__email", "customer__name"]

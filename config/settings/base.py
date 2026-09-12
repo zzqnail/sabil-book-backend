@@ -101,6 +101,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "sabil_book.users",
+    "sabil_book.requests",
     "sabil_book.offers",
     "sabil_book.reviews",
     "sabil_book.payments",
@@ -357,6 +358,16 @@ REST_FRAMEWORK = {
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"
+
+# Terms are deliberately configurable so deployments can maintain their own
+# moderation policy without changing application code.
+REQUEST_MODERATION_BLOCKLIST = [
+    "buy drugs",
+    "child pornography",
+    "credit card dump",
+    "наркотики",
+    "детская порнография",
+]
 
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings

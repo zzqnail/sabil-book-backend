@@ -82,12 +82,12 @@ class Command(BaseCommand):
         from sabil_book.offers.tests.factories import OrderFactory  # noqa: PLC0415
         from sabil_book.payments.tests.factories import PaymentFactory  # noqa: PLC0415
         from sabil_book.payments.tests.factories import PayoutFactory  # noqa: PLC0415
+        from sabil_book.requests.tests.factories import RequestFactory  # noqa: PLC0415
         from sabil_book.reviews.tests.factories import DisputeFactory  # noqa: PLC0415
         from sabil_book.reviews.tests.factories import ReviewFactory  # noqa: PLC0415
         from sabil_book.users.tests.factories import (  # noqa: PLC0415
             ProviderProfileFactory,
         )
-        from sabil_book.users.tests.factories import RequestFactory  # noqa: PLC0415
         from sabil_book.users.tests.factories import UserFactory  # noqa: PLC0415
 
         n_customers = options["customers"]

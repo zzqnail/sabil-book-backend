@@ -8,8 +8,8 @@ from factory.django import DjangoModelFactory
 from sabil_book.offers.models import Message
 from sabil_book.offers.models import Offer
 from sabil_book.offers.models import Order
+from sabil_book.requests.tests.factories import RequestFactory
 from sabil_book.users.tests.factories import ProviderProfileFactory
-from sabil_book.users.tests.factories import RequestFactory
 from sabil_book.users.tests.factories import UserFactory
 
 
