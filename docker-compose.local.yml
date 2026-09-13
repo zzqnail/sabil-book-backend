@@ -32,7 +32,7 @@ services:
     image: sabil_book_production_postgres
     container_name: sabil_book_local_postgres
     volumes:
-      - sabil_book_local_postgres_data:/var/lib/postgresql/data
+      - sabil_book_local_postgres_data:/var/lib/postgresql
       - sabil_book_local_postgres_data_backups:/backups
     env_file:
       - path: ./.envs/.local/.postgres

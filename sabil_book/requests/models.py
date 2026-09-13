@@ -6,11 +6,17 @@ from django.utils.translation import gettext_lazy as _
 class Request(models.Model):
     class RequestCategory(models.TextChoices):
         RESEARCH_BRIEF = "research_brief", _("Research brief")
-        PROFESSIONAL_TEMPLATE = "professional_template", _(
-            "Professional template / SOP",
+        PROFESSIONAL_TEMPLATE = (
+            "professional_template",
+            _(
+                "Professional template / SOP",
+            ),
         )
-        CERTIFICATION_MATERIAL = "certification_material", _(
-            "Certification material",
+        CERTIFICATION_MATERIAL = (
+            "certification_material",
+            _(
+                "Certification material",
+            ),
         )
 
     class RequestStatus(models.TextChoices):

@@ -74,9 +74,7 @@ def moderate_request(request_id: int, *, approve: bool, reason: str = "") -> Req
         raise InvalidTransitionError(msg)
 
     request.status = (
-        Request.RequestStatus.PUBLISHED
-        if approve
-        else Request.RequestStatus.REJECTED
+        Request.RequestStatus.PUBLISHED if approve else Request.RequestStatus.REJECTED
     )
     request.rejection_reason = "" if approve else reason.strip()
     request.published_at = timezone.now() if approve else None
