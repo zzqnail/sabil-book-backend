@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from unicodedata import normalize
 
 from django.conf import settings
 from django.db import transaction
@@ -20,15 +21,26 @@ class ModerationResult:
         return bool(self.matched_terms)
 
 
+def normalize_for_moderation(value: str) -> str:
+    normalized = normalize("NFKC", value).casefold()
+    words = "".join(
+        character if character.isalnum() else " " for character in normalized
+    )
+    return " ".join(
+        words.split(),
+    )
+
+
 def check_content(request: Request) -> ModerationResult:
-    content = f"{request.title}\n{request.description}".casefold()
+    content = normalize_for_moderation(f"{request.title}\n{request.description}")
+    padded_content = f" {content} "
     blocklist = getattr(settings, "REQUEST_MODERATION_BLOCKLIST", [])
     normalized_terms = {
-        term.strip().casefold()
+        normalized_term
         for term in blocklist
-        if isinstance(term, str) and term.strip()
+        if isinstance(term, str) and (normalized_term := normalize_for_moderation(term))
     }
-    matches = sorted(term for term in normalized_terms if term in content)
+    matches = sorted(term for term in normalized_terms if f" {term} " in padded_content)
     return ModerationResult(matched_terms=matches)
 
 

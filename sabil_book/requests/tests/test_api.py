@@ -136,6 +136,32 @@ def test_browse_filters_category_and_status(api_client, request_payload):
 
 
 @pytest.mark.django_db
+def test_anonymous_user_can_browse_published_requests(api_client, request_payload):
+    published = Request.objects.create(
+        customer=UserFactory(),
+        status=Request.RequestStatus.PUBLISHED,
+        **request_payload,
+    )
+    Request.objects.create(customer=UserFactory(), **request_payload)
+
+    response = api_client.get(reverse("api:browse-list"))
+
+    assert response.status_code == HTTPStatus.OK
+    assert [item["id"] for item in response.data] == [published.pk]
+
+
+@pytest.mark.django_db
+def test_anonymous_user_can_list_request_categories(api_client):
+    response = api_client.get(reverse("api:request-categories"))
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.data == [
+        {"value": value, "label": label}
+        for value, label in Request.RequestCategory.choices
+    ]
+
+
+@pytest.mark.django_db
 def test_customer_cannot_access_another_customers_request(api_client):
     request = Request.objects.create(
         customer=UserFactory(),
@@ -166,3 +192,14 @@ def test_published_request_cannot_be_edited(api_client, request_payload):
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_negative_budget_is_rejected(api_client, request_payload):
+    api_client.force_authenticate(UserFactory())
+    request_payload["budget"] = "-0.01"
+
+    response = api_client.post(reverse("api:request-list"), request_payload)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert "budget" in response.data

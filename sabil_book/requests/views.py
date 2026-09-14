@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from rest_framework import mixins
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -68,7 +69,7 @@ class RequestViewSet(ModelViewSet):
             return transition_error(exc)
         return Response(self.get_serializer(instance).data)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], permission_classes=[AllowAny])
     def categories(self, request):
         data = [
             {"value": value, "label": label}
@@ -78,6 +79,7 @@ class RequestViewSet(ModelViewSet):
 
 
 class BrowseRequestViewSet(ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
     serializer_class = BrowseRequestSerializer
     queryset = Request.objects.filter(
         status__in=[Request.RequestStatus.PUBLISHED, Request.RequestStatus.CLOSED],

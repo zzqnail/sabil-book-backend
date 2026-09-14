@@ -27,3 +27,30 @@ def test_content_check_allows_content_when_blocklist_is_empty(settings):
 
     assert result.matched_terms == []
     assert not result.requires_manual_review
+
+
+@pytest.mark.django_db
+def test_content_check_does_not_match_terms_inside_words(settings):
+    settings.REQUEST_MODERATION_BLOCKLIST = ["drug"]
+    request = RequestFactory(
+        title="Drugstore research",
+        description="Compare local drugstores.",
+    )
+
+    result = check_content(request)
+
+    assert result.matched_terms == []
+
+
+@pytest.mark.django_db
+def test_content_check_normalizes_separators_and_unicode(settings):
+    settings.REQUEST_MODERATION_BLOCKLIST = ["buy drugs"]
+    request = RequestFactory(
+        title="\uff22\uff35\uff39---DRUGS",
+        description="Suspicious content",
+    )
+
+    result = check_content(request)
+
+    assert result.matched_terms == ["buy drugs"]
+    assert result.requires_manual_review

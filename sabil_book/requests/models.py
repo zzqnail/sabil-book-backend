@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -45,6 +46,7 @@ class Request(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
+        validators=[MinValueValidator(0)],
     )
     status = models.CharField(
         _("Request Status"),
@@ -61,6 +63,12 @@ class Request(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(budget__gte=0) | models.Q(budget__isnull=True),
+                name="request_budget_non_negative",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.customer} - {self.get_category_display()}"
