@@ -7,7 +7,6 @@ from factory import post_generation
 from factory.django import DjangoModelFactory
 
 from sabil_book.users.models import ProviderProfile
-from sabil_book.users.models import Request
 from sabil_book.users.models import User
 
 
@@ -45,12 +44,3 @@ class ProviderProfileFactory(DjangoModelFactory[ProviderProfile]):
 
     class Meta:
         model = ProviderProfile
-
-
-class RequestFactory(DjangoModelFactory[Request]):
-    customer = factory.SubFactory(UserFactory)
-    category = fuzzy.FuzzyChoice(Request.RequestCategory.values)
-    budget = fuzzy.FuzzyDecimal(10, 500, precision=2)
-
-    class Meta:
-        model = Request

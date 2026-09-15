@@ -12,8 +12,8 @@ from sabil_book.offers.models import Order
 from sabil_book.offers.tests.factories import MessageFactory
 from sabil_book.offers.tests.factories import OfferFactory
 from sabil_book.offers.tests.factories import OrderFactory
+from sabil_book.requests.tests.factories import RequestFactory
 from sabil_book.users.tests.factories import ProviderProfileFactory
-from sabil_book.users.tests.factories import RequestFactory
 
 if TYPE_CHECKING:
     from sabil_book.users.models import User

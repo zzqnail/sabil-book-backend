@@ -7,7 +7,6 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from sabil_book.users.models import ProviderProfile
-from sabil_book.users.models import Request
 
 
 class Offer(models.Model):
@@ -19,7 +18,7 @@ class Offer(models.Model):
         EXPIRED = "expired", _("Expired")  # after validity window
 
     request = models.ForeignKey(
-        Request,
+        "requests.Request",
         on_delete=models.CASCADE,
         related_name="offers",
         verbose_name=_("request"),
