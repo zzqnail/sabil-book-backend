@@ -1,13 +1,10 @@
 from django.db import transaction
 from django.utils import timezone
 
+from sabil_book.exceptions import InvalidTransitionError
 from sabil_book.requests.models import Request
 
 from .models import Offer
-
-
-class InvalidTransitionError(ValueError):
-    """Raised when an offer cannot move to the desired state."""
 
 
 @transaction.atomic

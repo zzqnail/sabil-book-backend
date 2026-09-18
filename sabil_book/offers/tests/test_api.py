@@ -1,12 +1,17 @@
 from decimal import Decimal
 from http import HTTPStatus
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
+from django.db import IntegrityError
 from django.urls import reverse
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from sabil_book.offers.models import Offer
 from sabil_book.offers.tests.factories import OfferFactory
+from sabil_book.offers.views import OfferViewSet
 from sabil_book.requests.models import Request
 from sabil_book.requests.tests.factories import RequestFactory
 from sabil_book.users.models import ProviderProfile
@@ -47,6 +52,52 @@ def test_verified_provider_can_create_offer_for_published_request(api_client):
     assert offer.delivery_days == delivery_days
     assert offer.comment == "I can complete this request within five days."
     assert offer.status == Offer.OfferStatus.PENDING
+
+
+@pytest.mark.django_db
+def test_duplicate_active_offer_returns_bad_request(api_client):
+    service_request = RequestFactory(status=Request.RequestStatus.PUBLISHED)
+    provider = ProviderProfileFactory(
+        kyc_status=ProviderProfile.KYCStatus.APPROVED,
+    )
+    OfferFactory(request=service_request, provider=provider)
+    api_client.force_authenticate(provider.user)
+
+    response = api_client.post(
+        reverse("api:offer-list"),
+        {
+            "request": service_request.pk,
+            "price": "150.00",
+            "delivery_days": 5,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert "request" in response.data
+    assert Offer.objects.filter(request=service_request, provider=provider).count() == 1
+
+
+@pytest.mark.django_db
+def test_duplicate_offer_race_returns_validation_error():
+    service_request = RequestFactory(status=Request.RequestStatus.PUBLISHED)
+    provider = ProviderProfileFactory(
+        kyc_status=ProviderProfile.KYCStatus.APPROVED,
+    )
+    database_cause = Exception()
+    database_cause.diag = SimpleNamespace(
+        constraint_name="unique_active_offer_per_provider_per_request",
+    )
+    integrity_error = IntegrityError()
+    integrity_error.__cause__ = database_cause
+    serializer = Mock(validated_data={"request": service_request})
+    serializer.save.side_effect = integrity_error
+    view = OfferViewSet()
+    view.request = SimpleNamespace(user=provider.user)
+
+    with pytest.raises(ValidationError) as exc_info:
+        view.perform_create(serializer)
+
+    assert "request" in exc_info.value.detail
 
 
 @pytest.mark.django_db
@@ -161,6 +212,19 @@ def test_customer_offer_list_requires_request_id(api_client):
 
 
 @pytest.mark.django_db
+def test_customer_offer_list_rejects_non_numeric_request_id(api_client):
+    api_client.force_authenticate(UserFactory())
+
+    response = api_client.get(
+        reverse("api:offer-for-request"),
+        {"request": "not-a-number"},
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert "request" in response.data
+
+
+@pytest.mark.django_db
 def test_customer_accepts_offer_and_rejects_competing_offers(api_client):
     service_request = RequestFactory(status=Request.RequestStatus.PUBLISHED)
     selected = OfferFactory(request=service_request)
@@ -190,6 +254,17 @@ def test_customer_cannot_accept_offer_for_another_customers_request(api_client):
     assert response.status_code == HTTPStatus.NOT_FOUND
     offer.refresh_from_db()
     assert offer.status == Offer.OfferStatus.PENDING
+
+
+@pytest.mark.django_db
+def test_accept_offer_with_non_numeric_id_returns_not_found(api_client):
+    api_client.force_authenticate(UserFactory())
+    numeric_url = reverse("api:offer-accept", args=[1])
+    invalid_url = numeric_url.replace("/1/", "/not-a-number/")
+
+    response = api_client.post(invalid_url)
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
 
 
 @pytest.mark.django_db
