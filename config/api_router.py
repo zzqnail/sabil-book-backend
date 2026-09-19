@@ -1,7 +1,9 @@
 from django.conf import settings
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 
+from sabil_book.offers.views import MessageListView
 from sabil_book.requests.views import BrowseRequestViewSet
 from sabil_book.requests.views import ModerationRequestViewSet
 from sabil_book.requests.views import RequestViewSet
@@ -20,4 +22,11 @@ router.register(
 
 
 app_name = "api"
-urlpatterns = router.urls
+urlpatterns = [
+    *router.urls,
+    path(
+        "offers/<int:offer_id>/messages/",
+        MessageListView.as_view(),
+        name="offer-messages",
+    ),
+]

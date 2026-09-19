@@ -34,5 +34,15 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore[index]
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "http://media.testserver/"
+
+# Channels
+# ------------------------------------------------------------------------------
+# In-process channel layer: WebSocket tests don't need a real Redis, and this
+# keeps them fast and isolated from whatever else is running against REDIS_URL.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 # Your stuff...
 # ------------------------------------------------------------------------------
