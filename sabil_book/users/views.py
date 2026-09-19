@@ -1,6 +1,9 @@
+import hmac
 import uuid
 
 from django.conf import settings
+from django.db import IntegrityError
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -16,14 +19,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from sabil_book.users.models import ProviderProfile
 from sabil_book.users.models import User
+from sabil_book.users.serializers import KYCWebhookSerializer
 from sabil_book.users.serializers import ProviderProfilePublicSerializer
 from sabil_book.users.serializers import ProviderProfileSerializer
 from sabil_book.users.serializers import RegisterSerializer
 from sabil_book.users.serializers import UserSerializer
+
+
+def _serialize_user(request):
+    return UserSerializer(request.user, context={"request": request}).data
 
 
 class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
@@ -48,8 +57,7 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
             serializer.save()
             return Response(status=status.HTTP_200_OK, data=serializer.data)
 
-        serializer = UserSerializer(request.user, context={"request": request})
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
+        return Response(status=status.HTTP_200_OK, data=_serialize_user(request))
 
 
 class RegisterView(CreateAPIView):
@@ -82,7 +90,12 @@ class LogoutView(APIView):
         if not refresh_token:
             raise ValidationError({"refresh": "This field is required."})
         try:
-            RefreshToken(refresh_token).blacklist()
+            token = RefreshToken(refresh_token)
+            token_user_id = token.get(jwt_settings.USER_ID_CLAIM)
+            request_user_id = getattr(request.user, jwt_settings.USER_ID_FIELD)
+            if token_user_id != request_user_id:
+                raise ValidationError({"refresh": "This token does not belong to you."})
+            token.blacklist()
         except TokenError as exc:
             raise ValidationError({"refresh": str(exc)}) from exc
         return Response(status=status.HTTP_205_RESET_CONTENT)
@@ -92,8 +105,7 @@ class CurrentUserView(APIView):
     """Return the currently authenticated user."""
 
     def get(self, request, *args, **kwargs):
-        serializer = UserSerializer(request.user, context={"request": request})
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
+        return Response(status=status.HTTP_200_OK, data=_serialize_user(request))
 
 
 class ProviderProfileViewSet(CreateModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -113,13 +125,20 @@ class ProviderProfileViewSet(CreateModelMixin, RetrieveModelMixin, GenericViewSe
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
-        if ProviderProfile.objects.filter(user=self.request.user).exists():
-            raise ValidationError({"detail": "You already have a provider profile."})
-        serializer.save(user=self.request.user)
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user)
+        except IntegrityError as exc:
+            raise ValidationError(
+                {"detail": "You already have a provider profile."},
+            ) from exc
+
+    def _get_own_profile(self, request):
+        return get_object_or_404(ProviderProfile, user=request.user)
 
     @action(detail=False, methods=["patch"], url_path="me")
     def me(self, request):
-        profile = get_object_or_404(ProviderProfile, user=request.user)
+        profile = self._get_own_profile(request)
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -128,7 +147,7 @@ class ProviderProfileViewSet(CreateModelMixin, RetrieveModelMixin, GenericViewSe
     @action(detail=False, methods=["post"], url_path="me/kyc/initiate")
     def initiate_kyc(self, request):
         """Stub: kick off an external KYC/AML check and mark it pending."""
-        profile = get_object_or_404(ProviderProfile, user=request.user)
+        profile = self._get_own_profile(request)
         profile.kyc_status = ProviderProfile.KYCStatus.PENDING
         profile.save(update_fields=["kyc_status"])
         data = {
@@ -150,23 +169,19 @@ class KYCWebhookView(APIView):
 
     def post(self, request, *args, **kwargs):
         secret = request.headers.get("X-Webhook-Secret", "")
-        if not settings.KYC_WEBHOOK_SECRET or secret != settings.KYC_WEBHOOK_SECRET:
+        if not settings.KYC_WEBHOOK_SECRET or not hmac.compare_digest(
+            secret,
+            settings.KYC_WEBHOOK_SECRET,
+        ):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        allowed_statuses = {
-            ProviderProfile.KYCStatus.APPROVED,
-            ProviderProfile.KYCStatus.REJECTED,
-        }
-        new_status = request.data.get("status")
-        if new_status not in allowed_statuses:
-            raise ValidationError(
-                {"status": f"Must be one of {sorted(allowed_statuses)}."},
-            )
+        serializer = KYCWebhookSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         profile = get_object_or_404(
             ProviderProfile,
-            pk=request.data.get("provider_profile_id"),
+            pk=serializer.validated_data["provider_profile_id"],
         )
-        profile.kyc_status = new_status
+        profile.kyc_status = serializer.validated_data["status"]
         profile.save(update_fields=["kyc_status"])
         return Response(status=status.HTTP_200_OK)

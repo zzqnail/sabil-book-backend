@@ -16,7 +16,7 @@ SECRET_KEY = env(
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "nondepreciative-darcy-cowardly.ngrok-free.dev",
+    "0.0.0.0",  # noqa: S104
 ]
 
 # CACHES

@@ -18,11 +18,19 @@ class UserSerializer(serializers.ModelSerializer[User]):
 
 
 class RegisterSerializer(serializers.ModelSerializer[User]):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ["email", "password", "name", "country"]
+
+    def validate_password(self, value: str) -> str:
+        dummy_user = User(
+            email=self.initial_data.get("email", ""),
+            name=self.initial_data.get("name", ""),
+        )
+        validate_password(value, dummy_user)
+        return value
 
     def create(self, validated_data: dict) -> User:
         return User.objects.create_user(**validated_data)
@@ -35,29 +43,42 @@ def _provider_rating(provider: ProviderProfile) -> float | None:
     return float(average) if average is not None else None
 
 
-class ProviderProfilePublicSerializer(serializers.ModelSerializer[ProviderProfile]):
-    """Public view of a provider: no payout details."""
-
+class _ProviderRatingMixin:
     rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj: ProviderProfile) -> float | None:
+        return _provider_rating(obj)
+
+
+class ProviderProfilePublicSerializer(
+    _ProviderRatingMixin,
+    serializers.ModelSerializer[ProviderProfile],
+):
+    """Public view of a provider: no payout details."""
 
     class Meta:
         model = ProviderProfile
         fields = ["id", "country", "kyc_status", "rating"]
         read_only_fields = fields
 
-    def get_rating(self, obj: ProviderProfile) -> float | None:
-        return _provider_rating(obj)
 
-
-class ProviderProfileSerializer(serializers.ModelSerializer[ProviderProfile]):
+class ProviderProfileSerializer(
+    _ProviderRatingMixin,
+    serializers.ModelSerializer[ProviderProfile],
+):
     """Full view of a provider profile, for its owner only."""
-
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = ProviderProfile
         fields = ["id", "country", "payout_provider", "kyc_status", "rating"]
         read_only_fields = ["kyc_status"]
 
-    def get_rating(self, obj: ProviderProfile) -> float | None:
-        return _provider_rating(obj)
+
+class KYCWebhookSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=[
+            ProviderProfile.KYCStatus.APPROVED,
+            ProviderProfile.KYCStatus.REJECTED,
+        ],
+    )
+    provider_profile_id = serializers.IntegerField()
