@@ -34,7 +34,8 @@ class OfferChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive_json(self, content, **kwargs) -> None:
-        body = (content.get("body") or "").strip()
+        raw_body = content.get("body")
+        body = raw_body.strip() if isinstance(raw_body, str) else ""
         if not body or len(body) > MAX_MESSAGE_LENGTH:
             await self.send_json({"error": "invalid_message"})
             return

@@ -18,6 +18,7 @@ from pathlib import Path
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter
 from channels.routing import URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
 # This allows easy placement of apps within the interior
@@ -37,8 +38,10 @@ from sabil_book.offers.routing import websocket_urlpatterns  # noqa: E402
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AuthMiddlewareStack(
-            TokenAuthMiddleware(URLRouter(websocket_urlpatterns)),
+        "websocket": AllowedHostsOriginValidator(
+            AuthMiddlewareStack(
+                TokenAuthMiddleware(URLRouter(websocket_urlpatterns)),
+            ),
         ),
     },
 )

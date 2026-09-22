@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 
 import redis
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -20,8 +23,13 @@ def is_rate_limited(user_id: int, offer_id: int) -> bool:
     """
     key = f"chat:rate:{user_id}:{offer_id}"
     client = _get_redis_client()
-    pipe = client.pipeline()
-    pipe.incr(key)
-    pipe.expire(key, settings.CHAT_MESSAGE_RATE_LIMIT_WINDOW, nx=True)
-    count, _expire_set = pipe.execute()
+    try:
+        pipe = client.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, settings.CHAT_MESSAGE_RATE_LIMIT_WINDOW, nx=True)
+        count, _expire_set = pipe.execute()
+    except redis.RedisError:
+        # Fail open: a Redis outage shouldn't take down chat entirely.
+        logger.warning("Redis unavailable for chat rate limiting", exc_info=True)
+        return False
     return count > settings.CHAT_MESSAGE_RATE_LIMIT

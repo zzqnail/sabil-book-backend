@@ -26,7 +26,10 @@ class MessageListView(ListAPIView):
     pagination_class = MessageCursorPagination
 
     def get_queryset(self):
-        offer = get_object_or_404(Offer, pk=self.kwargs["offer_id"])
+        offer = get_object_or_404(
+            Offer.objects.select_related("request", "provider"),
+            pk=self.kwargs["offer_id"],
+        )
         if not is_offer_participant(self.request.user, offer):
             # 404, not 403: don't reveal that the offer exists to non-participants.
             raise NotFound
