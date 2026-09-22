@@ -31,6 +31,12 @@ class User(AbstractUser):
     email = EmailField(_("email address"), unique=True)
     username = None  # type: ignore[assignment]
     country = CharField(_("User location"), blank=True, max_length=255)
+    preferred_language = CharField(
+        _("Preferred language"),
+        blank=True,
+        max_length=10,
+        default="en",
+    )
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

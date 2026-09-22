@@ -37,9 +37,13 @@ class TestUserViewSet:
         response = view.me(request)  # type: ignore[misc,call-arg,arg-type]
 
         assert response.data == {
-            "url": f"http://testserver/api/users/{user.pk}/",
-            "name": user.name,
+            "id": str(user.pk),
+            "email": user.email,
+            "fullName": user.name,
+            "isProvider": False,
+            "isAdmin": user.is_staff,
             "country": user.country,
+            "preferredLanguage": user.preferred_language,
         }
 
 
@@ -60,7 +64,7 @@ class TestCurrentUserEndpoint:
         response = api_client.get("/api/users/me/")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["name"] == user.name
+        assert response.data["fullName"] == user.name
         assert response.data["country"] == user.country
 
     def test_get_me_requires_authentication(self, db, api_client: APIClient):
@@ -73,11 +77,11 @@ class TestCurrentUserEndpoint:
 
         response = api_client.patch(
             "/api/users/me/",
-            {"name": "New Name", "country": "QA"},
+            {"fullName": "New Name", "country": "QA"},
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["name"] == "New Name"
+        assert response.data["fullName"] == "New Name"
         assert response.data["country"] == "QA"
 
         user.refresh_from_db()

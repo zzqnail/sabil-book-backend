@@ -22,15 +22,16 @@ class TestRegisterView:
             {
                 "email": "new-user@example.com",
                 "password": STRONG_PASSWORD,
-                "name": "New User",
+                "fullName": "New User",
                 "country": "QA",
             },
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert "authToken" in response.data
-        assert "refreshToken" in response.data
-        assert response.data["user"]["name"] == "New User"
+        assert "access" in response.data
+        assert "refresh" in response.data
+        assert response.data["user"]["fullName"] == "New User"
+        assert response.data["user"]["isProvider"] is False
 
         user = User.objects.get(email="new-user@example.com")
         assert user.check_password(STRONG_PASSWORD)
@@ -73,6 +74,28 @@ class TestRegisterView:
         assert "email" in response.data
         assert "password" in response.data
 
+    def test_register_as_provider_creates_provider_profile(
+        self,
+        db,
+        api_client: APIClient,
+    ):
+        response = api_client.post(
+            "/api/auth/register/",
+            {
+                "email": "provider@example.com",
+                "password": STRONG_PASSWORD,
+                "fullName": "New Provider",
+                "country": "QA",
+                "isProvider": True,
+            },
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["user"]["isProvider"] is True
+
+        user = User.objects.get(email="provider@example.com")
+        assert hasattr(user, "provider_profile")
+
 
 class TestLoginView:
     def test_login_success(self, db, api_client: APIClient):
@@ -86,6 +109,7 @@ class TestLoginView:
         assert response.status_code == status.HTTP_200_OK
         assert "access" in response.data
         assert "refresh" in response.data
+        assert response.data["user"]["email"] == "login@example.com"
 
     def test_login_wrong_password_fails(self, db, api_client: APIClient):
         UserFactory.create(email="login2@example.com", password=STRONG_PASSWORD)
@@ -246,7 +270,9 @@ class TestCurrentUserView:
         response = api_client.get("/api/auth/me/")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["name"] == user.name
+        assert response.data["fullName"] == user.name
+        assert response.data["email"] == user.email
+        assert response.data["isProvider"] is False
 
     def test_me_requires_authentication(self, db, api_client: APIClient):
         response = api_client.get("/api/auth/me/")

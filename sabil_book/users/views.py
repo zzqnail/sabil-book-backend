@@ -21,6 +21,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from sabil_book.users.models import ProviderProfile
 from sabil_book.users.models import User
@@ -28,6 +29,7 @@ from sabil_book.users.serializers import KYCWebhookSerializer
 from sabil_book.users.serializers import ProviderProfilePublicSerializer
 from sabil_book.users.serializers import ProviderProfileSerializer
 from sabil_book.users.serializers import RegisterSerializer
+from sabil_book.users.serializers import SabilTokenObtainPairSerializer
 from sabil_book.users.serializers import UserSerializer
 
 
@@ -70,14 +72,26 @@ class RegisterView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        is_provider = bool(request.data.get("isProvider", False))
         user = serializer.save()
+        if is_provider:
+            ProviderProfile.objects.get_or_create(
+                user=user,
+                defaults={"country": user.country},
+            )
         refresh = RefreshToken.for_user(user)
         data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
-            "refreshToken": str(refresh),
-            "authToken": str(refresh.access_token),
         }
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class LoginView(TokenObtainPairView):
+    """Same token pair as the stock view, plus the signed-in user."""
+
+    serializer_class = SabilTokenObtainPairSerializer
 
 
 class LogoutView(APIView):
@@ -102,10 +116,21 @@ class LogoutView(APIView):
 
 
 class CurrentUserView(APIView):
-    """Return the currently authenticated user."""
+    """Return or update the currently authenticated user."""
 
     def get(self, request, *args, **kwargs):
         return Response(status=status.HTTP_200_OK, data=_serialize_user(request))
+
+    def patch(self, request, *args, **kwargs):
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
 
 
 class ProviderProfileViewSet(CreateModelMixin, RetrieveModelMixin, GenericViewSet):
