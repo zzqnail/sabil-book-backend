@@ -27,7 +27,11 @@ ALLOWED_HOSTS = [
 # The Vite dev server proxies /api to Django (see sabil-book-frontend's
 # vite.config.ts), so this only matters when the frontend is hit directly
 # (e.g. `vite preview`) instead of through that proxy.
-CORS_ALLOWED_ORIGINS = [*CORS_ALLOWED_ORIGINS, "http://localhost:5173", "http://127.0.0.1:5173"]
+CORS_ALLOWED_ORIGINS = [
+    *CORS_ALLOWED_ORIGINS,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 # CACHES
 # ------------------------------------------------------------------------------
