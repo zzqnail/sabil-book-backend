@@ -82,7 +82,7 @@ def _provider_rating(provider: ProviderProfile) -> float | None:
     return float(average) if average is not None else None
 
 
-class _ProviderRatingMixin:
+class _ProviderRatingMixin(serializers.Serializer):
     rating = serializers.SerializerMethodField()
 
     def get_rating(self, obj: ProviderProfile) -> float | None:

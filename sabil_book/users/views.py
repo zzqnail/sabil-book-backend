@@ -107,7 +107,7 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token_user_id = token.get(jwt_settings.USER_ID_CLAIM)
             request_user_id = getattr(request.user, jwt_settings.USER_ID_FIELD)
-            if token_user_id != request_user_id:
+            if str(token_user_id) != str(request_user_id):
                 raise ValidationError({"refresh": "This token does not belong to you."})
             token.blacklist()
         except TokenError as exc:
