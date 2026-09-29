@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 
+from sabil_book.notifications.views import NotificationPreferenceViewSet
 from sabil_book.requests.views import BrowseRequestViewSet
 from sabil_book.requests.views import ModerationRequestViewSet
 from sabil_book.requests.views import RequestViewSet
@@ -10,6 +11,11 @@ from sabil_book.users.api.views import UserViewSet
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 
 router.register("users", UserViewSet)
+router.register(
+    "notification-settings",
+    NotificationPreferenceViewSet,
+    basename="notification-settings",
+)
 router.register("requests", RequestViewSet, basename="request")
 router.register("browse/requests", BrowseRequestViewSet, basename="browse")
 router.register(
